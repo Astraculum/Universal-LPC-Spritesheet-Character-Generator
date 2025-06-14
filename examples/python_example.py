@@ -38,13 +38,11 @@ def generate_character_spritesheet():
         # Print available options for debugging
         print("\nAvailable options:")
         print("Body Types:", available_options["bodyTypes"])
-        print("Animations:", available_options["animations"])
         
         # Character configuration using available options
         config = {
             "bodyType": "male",  # Basic body type
             "bodyColor": "light",
-            "animations": ["idle", "walk", "run", "slash"],  # Using valid animations
             "equipment": {
                 # Hair - using adult bangs
                 "hair": "bangs/adult",

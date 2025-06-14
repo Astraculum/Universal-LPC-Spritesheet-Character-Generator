@@ -46,9 +46,6 @@ app.post('/api/generate', async (req, res) => {
     if (!config.bodyType) {
       return res.status(400).json({ error: 'bodyType is required' });
     }
-    if (!config.animations || !Array.isArray(config.animations) || config.animations.length === 0) {
-      return res.status(400).json({ error: 'animations array is required' });
-    }
     
     // Validate equipment paths
     if (config.equipment) {

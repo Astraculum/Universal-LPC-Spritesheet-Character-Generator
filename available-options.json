@@ -7,23 +7,6 @@
     "muscular",
     "pregnant"
   ],
-  "animations": [
-    "spellcast",
-    "thrust",
-    "walk",
-    "slash",
-    "shoot",
-    "hurt",
-    "climb",
-    "idle",
-    "jump",
-    "sit",
-    "emote",
-    "run",
-    "combat_idle",
-    "backslash",
-    "halfslash"
-  ],
   "equipment": {
     "types": [
       "arms",

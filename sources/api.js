@@ -64,7 +64,6 @@ class CharacterGenerator {
    * @param {string} config.bodyType - Body type (male, female, teen, child, muscular, pregnant)
    * @param {string} config.bodyColor - Body color variant
    * @param {Object} config.equipment - Equipment configuration
-   * @param {string[]} config.animations - List of animations to include
    * @returns {Promise<Object>} - Generated spritesheet data and metadata
    */
   async generateCharacter(config) {
@@ -94,7 +93,6 @@ class CharacterGenerator {
           width: this.canvas.width,
           height: this.canvas.height,
           frameSize: this.universalFrameSize,
-          animations: config.animations,
           credits: this.sheetCredits
         }
       };
@@ -111,16 +109,6 @@ class CharacterGenerator {
     if (!config.bodyType || !this.bodyTypes.includes(config.bodyType)) {
       throw new Error(`Invalid body type. Must be one of: ${this.bodyTypes.join(', ')}`);
     }
-    
-    if (!config.animations || !Array.isArray(config.animations)) {
-      throw new Error('Animations must be provided as an array');
-    }
-    
-    for (const anim of config.animations) {
-      if (!this.animations[anim]) {
-        throw new Error(`Invalid animation: ${anim}`);
-      }
-    }
   }
 
   /**
@@ -133,8 +121,7 @@ class CharacterGenerator {
       type: 'body',
       variant: config.bodyColor,
       bodyType: config.bodyType,
-      zPos: 10,
-      animations: config.animations
+      zPos: 10
     });
     
     // Add equipment layers
@@ -144,8 +131,7 @@ class CharacterGenerator {
           type,
           variant,
           bodyType: config.bodyType,
-          zPos: this.getZPosition(type),
-          animations: config.animations
+          zPos: this.getZPosition(type)
         });
       }
     }
@@ -181,25 +167,20 @@ class CharacterGenerator {
     // Sort items by z-position
     this.itemsToDraw.sort((a, b) => a.zPos - b.zPos);
     
-    // Draw each animation
-    for (const anim of this.itemsToDraw[0].animations) {
-      const animData = this.animations[anim];
-      const rowOffset = animData.row * this.universalFrameSize;
+    // Draw each frame
+    for (let frame = 0; frame < 8; frame++) {
+      const x = frame * this.universalFrameSize;
+      const y = 0;
       
-      for (let frame = 0; frame < animData.frames; frame++) {
-        const x = frame * this.universalFrameSize;
-        const y = rowOffset;
-        
-        // Draw each layer
-        for (const item of this.itemsToDraw) {
-          const img = this.images[item.type];
-          if (img) {
-            this.ctx.drawImage(
-              img,
-              x, y, this.universalFrameSize, this.universalFrameSize,
-              x, y, this.universalFrameSize, this.universalFrameSize
-            );
-          }
+      // Draw each layer
+      for (const item of this.itemsToDraw) {
+        const img = this.images[item.type];
+        if (img) {
+          this.ctx.drawImage(
+            img,
+            x, y, this.universalFrameSize, this.universalFrameSize,
+            x, y, this.universalFrameSize, this.universalFrameSize
+          );
         }
       }
     }
@@ -236,37 +217,32 @@ class CharacterGenerator {
     
     // Special case for body
     if (item.type === 'body') {
-      const anim = item.animations[0]; // Use the first animation for now
-      return join(basePath, 'body', 'bodies', item.bodyType, `${anim}.png`);
+      return join(basePath, 'body', 'bodies', item.bodyType, 'idle.png');
     }
     
     // Special case for hair
     if (item.type === 'hair') {
-      const anim = item.animations[0]; // Use the first animation for now
-      return join(basePath, 'hair', item.variant, bodyTypeDir, `${anim}.png`);
+      return join(basePath, 'hair', item.variant, bodyTypeDir, 'idle.png');
     }
     
     // Special case for eyes
     if (item.type === 'eyes') {
-      const anim = item.animations[0]; // Use the first animation for now
-      return join(basePath, 'eyes', item.variant, bodyTypeDir, `${anim}.png`);
+      return join(basePath, 'eyes', item.variant, bodyTypeDir, 'idle.png');
     }
     
     // For other equipment types
-    const anim = item.animations[0]; // Use the first animation for now
-    
     // Try different possible paths
     const possiblePaths = [
       // Standard path
-      join(basePath, item.type, item.variant, bodyTypeDir, `${anim}.png`),
+      join(basePath, item.type, item.variant, bodyTypeDir, 'idle.png'),
       // Universal path
-      join(basePath, item.type, item.variant, 'universal', `${anim}.png`),
+      join(basePath, item.type, item.variant, 'universal', 'idle.png'),
       // Background path
-      join(basePath, item.type, item.variant, 'background', `${anim}.png`),
+      join(basePath, item.type, item.variant, 'background', 'idle.png'),
       // Foreground path
-      join(basePath, item.type, item.variant, 'foreground', `${anim}.png`),
+      join(basePath, item.type, item.variant, 'foreground', 'idle.png'),
       // Simple path
-      join(basePath, item.type, item.variant, `${anim}.png`)
+      join(basePath, item.type, item.variant, 'idle.png')
     ];
     
     // Return the first path that exists
@@ -306,7 +282,6 @@ class CharacterGenerator {
       
       return {
         bodyTypes: this.bodyTypes,
-        animations: Object.keys(this.animations),
         equipment: {
           types: equipmentTypes,
           variants: variants

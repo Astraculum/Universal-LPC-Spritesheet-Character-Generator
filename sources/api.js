@@ -126,10 +126,15 @@ class CharacterGenerator {
     
     // Add equipment layers
     if (config.equipment) {
-      for (const [type, variant] of Object.entries(config.equipment)) {
+      for (const [type, variantInfo] of Object.entries(config.equipment)) {
+        // Handle both string variants and nested variant objects
+        const variant = typeof variantInfo === 'string' ? variantInfo : variantInfo.variant;
+        const subvariant = typeof variantInfo === 'object' ? variantInfo.subvariant : null;
+        
         this.itemsToDraw.push({
           type,
           variant,
+          subvariant,
           bodyType: config.bodyType,
           zPos: this.getZPosition(type)
         });
@@ -217,48 +222,67 @@ class CharacterGenerator {
     
     // Special case for body
     if (item.type === 'body') {
-      return join(basePath, 'body', 'bodies', item.bodyType, 'idle.png');
+        return join(basePath, 'body', 'bodies', item.bodyType, 'idle.png');
     }
     
-    // Special case for hair
-    if (item.type === 'hair') {
-      return join(basePath, 'hair', item.variant, bodyTypeDir, 'idle.png');
+    // Handle equipment with nested variants
+    if (item.subvariant) {
+        const possiblePaths = [
+            // Standard path with subvariant
+            join(basePath, item.type, item.variant, item.subvariant, bodyTypeDir, 'idle.png'),
+            // Universal path with subvariant
+            join(basePath, item.type, item.variant, item.subvariant, 'universal', 'idle.png'),
+            // Background path with subvariant
+            join(basePath, item.type, item.variant, item.subvariant, 'background', 'idle.png'),
+            // Foreground path with subvariant
+            join(basePath, item.type, item.variant, item.subvariant, 'foreground', 'idle.png'),
+            // Simple path with subvariant
+            join(basePath, item.type, item.variant, item.subvariant, 'idle.png'),
+            // Fallback to variant-only path
+            join(basePath, item.type, item.variant, bodyTypeDir, 'idle.png')
+        ];
+        
+        // Return the first path that exists
+        for (const path of possiblePaths) {
+            try {
+                if (fs.existsSync(path)) {
+                    return path;
+                }
+            } catch (error) {
+                console.warn(`Could not check path ${path}: ${error.message}`);
+            }
+        }
+        
+        return possiblePaths[0];
     }
     
-    // Special case for eyes
-    if (item.type === 'eyes') {
-      return join(basePath, 'eyes', item.variant, bodyTypeDir, 'idle.png');
-    }
-    
-    // For other equipment types
-    // Try different possible paths
+    // For simple equipment types (no subvariants)
     const possiblePaths = [
-      // Standard path
-      join(basePath, item.type, item.variant, bodyTypeDir, 'idle.png'),
-      // Universal path
-      join(basePath, item.type, item.variant, 'universal', 'idle.png'),
-      // Background path
-      join(basePath, item.type, item.variant, 'background', 'idle.png'),
-      // Foreground path
-      join(basePath, item.type, item.variant, 'foreground', 'idle.png'),
-      // Simple path
-      join(basePath, item.type, item.variant, 'idle.png')
+        // Standard path
+        join(basePath, item.type, item.variant, bodyTypeDir, 'idle.png'),
+        // Universal path
+        join(basePath, item.type, item.variant, 'universal', 'idle.png'),
+        // Background path
+        join(basePath, item.type, item.variant, 'background', 'idle.png'),
+        // Foreground path
+        join(basePath, item.type, item.variant, 'foreground', 'idle.png'),
+        // Simple path
+        join(basePath, item.type, item.variant, 'idle.png')
     ];
     
     // Return the first path that exists
     for (const path of possiblePaths) {
-      try {
-        if (fs.existsSync(path)) {
-          return path;
+        try {
+            if (fs.existsSync(path)) {
+                return path;
+            }
+        } catch (error) {
+            console.warn(`Could not check path ${path}: ${error.message}`);
         }
-      } catch (error) {
-        console.warn(`Could not check path ${path}: ${error.message}`);
-      }
     }
     
-    // If no path exists, return the standard path
     return possiblePaths[0];
-  }
+}
 
   /**
    * Get all available options for character generation
@@ -327,29 +351,35 @@ class CharacterGenerator {
         .filter(entry => entry.isDirectory())
         .map(entry => entry.name);
 
-      // For each variant, check if it has any subdirectories
-      const validVariants = [];
+      // For each variant, recursively check subdirectories
+      const validVariants = {};
       for (const variant of variants) {
         const variantPath = join(typePath, variant);
         try {
           const variantEntries = await fs.readdir(variantPath, { withFileTypes: true });
           
           // Check if it has any subdirectories
-          const hasSubdirectories = variantEntries.some(entry => entry.isDirectory());
+          const subdirectories = variantEntries
+            .filter(entry => entry.isDirectory())
+            .map(entry => entry.name);
           
-          if (hasSubdirectories) {
-            validVariants.push(variant);
+          if (subdirectories.length > 0) {
+            // Recursively get subvariants
+            validVariants[variant] = await this.getVariants(variantPath);
+          } else {
+            // If no subdirectories, just add the variant name
+            validVariants[variant] = [];
           }
         } catch (error) {
           console.warn(`Could not read variant directory ${variantPath}: ${error.message}`);
         }
       }
 
-      console.log(`Found ${validVariants.length} valid variants for ${typePath}:`, validVariants);
+      console.log(`Found variants for ${typePath}:`, validVariants);
       return validVariants;
     } catch (error) {
       console.error(`Error getting variants for ${typePath}: ${error.message}`);
-      return [];
+      return {};
     }
   }
 

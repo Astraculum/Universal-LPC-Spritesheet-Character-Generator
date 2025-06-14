@@ -41,50 +41,88 @@ def generate_character_spritesheet():
         
         # Character configuration using available options
         config = {
-            "bodyType": "male",  # Basic body type
-            "bodyColor": "light",
-            "equipment": {
-                # Hair - using adult bangs
-                "hair": "bangs/adult",
-                
-                # Eyes - using adult human eyes
-                "eyes": "human/adult",
-                
-                # Facial features - adding round glasses
-                "facial": "glasses/round",
-                
-                # Head - using male face
-                "head": "faces/male",
-                
-                # Torso - using a tunic
-                "torso": "clothes/tunic",
-                
-                # Legs - using male pants
-                "legs": "pants/male",
-                
-                # Feet - using basic shoes
-                "feet": "shoes/basic",
-                
-                # Arms - using male gloves
-                "arms": "gloves/male",
-                
-                # Hat - using a greathelm
-                "hat": "helmet/greathelm",
-                
-                # Weapon - using a longsword
-                "weapon": "sword/longsword",
-                
-                # Shield - using a crusader shield
-                "shield": "crusader",
-                
-                # Neck - using a simple necklace
-                "neck": "necklace/simple",
-                
-                # Shoulders - using male plate armor
-                "shoulders": "plate/male"
-            }
-        }
+    "bodyType": "male",  # Basic body type
+    "bodyColor": "light",
+    "equipment": {
+        # Hair - using adult bangs
+        "hair": {
+            "variant": "bangs",
+            "subvariant": "adult"
+        },
         
+        # Eyes - using adult human eyes
+        "eyes": {
+            "variant": "human",
+            "subvariant": "adult"
+        },
+        
+        # Facial features - adding round glasses
+        "facial": {
+            "variant": "glasses",
+            "subvariant": "round"
+        },
+        
+        # Head - using male face
+        "head": {
+            "variant": "faces",
+            "subvariant": "male"
+        },
+        
+        # Torso - using a tunic
+        "torso": {
+            "variant": "clothes",
+            "subvariant": "tunic"
+        },
+        
+        # Legs - using male pants
+        "legs": {
+            "variant": "pants",
+            "subvariant": "male"
+        },
+        
+        # Feet - using basic shoes
+        "feet": {
+            "variant": "shoes",
+            "subvariant": "basic"
+        },
+        
+        # Arms - using male gloves
+        "arms": {
+            "variant": "gloves",
+            "subvariant": "male"
+        },
+        
+        # Hat - using a greathelm
+        "hat": {
+            "variant": "helmet",
+            "subvariant": "greathelm"
+        },
+        
+        # Weapon - using a longsword
+        "weapon": {
+            "variant": "sword",
+            "subvariant": "long"
+        },
+        
+        # Shield - using a crusader shield
+        "shield": {
+            "variant": "crusader",
+            "subvariant": "basic"
+        },
+        
+        # Neck - using a simple necklace
+        "neck": {
+            "variant": "necklace",
+            "subvariant": "simple"
+        },
+        
+        # Shoulders - using male plate armor
+        "shoulders": {
+            "variant": "plate",
+            "subvariant": "male"
+        }
+    }
+}
         print("\nFinal configuration:")
         print(json.dumps(config, indent=2))
         

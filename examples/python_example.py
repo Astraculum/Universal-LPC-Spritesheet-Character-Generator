@@ -24,7 +24,7 @@ def generate_character_spritesheet():
         "bodyColor": "light",
         "animations": ["idle", "walk", "run"],
         "equipment": {
-            "hair": "short_brown",
+            "hair": "bangs",
             "eyes": "blue",
             "armor": "leather",
             "weapon": "sword",

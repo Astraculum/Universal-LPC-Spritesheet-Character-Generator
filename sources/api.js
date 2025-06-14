@@ -236,7 +236,6 @@ class CharacterGenerator {
     
     // Special case for body
     if (item.type === 'body') {
-      // For body, we need to load each animation separately
       const anim = item.animations[0]; // Use the first animation for now
       return join(basePath, 'body', 'bodies', item.bodyType, `${anim}.png`);
     }
@@ -244,6 +243,7 @@ class CharacterGenerator {
     // Special case for hair
     if (item.type === 'hair') {
       const anim = item.animations[0]; // Use the first animation for now
+      // Hair files are organized by style and then by animation
       return join(basePath, 'hair', item.variant, bodyTypeDir, `${anim}.png`);
     }
     
@@ -256,6 +256,66 @@ class CharacterGenerator {
     // For other equipment types
     const anim = item.animations[0]; // Use the first animation for now
     return join(basePath, item.type, item.variant, bodyTypeDir, `${anim}.png`);
+  }
+
+  /**
+   * Get all available options for character generation
+   * @returns {Promise<Object>} Object containing all available options
+   */
+  async getAvailableOptions() {
+    const basePath = join(__dirname, '..', 'spritesheets');
+    
+    try {
+      // Get all equipment types (directories in spritesheets)
+      const equipmentTypes = await this.getEquipmentTypes(basePath);
+      
+      // Get variants for each equipment type
+      const variants = {};
+      for (const type of equipmentTypes) {
+        variants[type] = await this.getVariants(join(basePath, type));
+      }
+      
+      return {
+        bodyTypes: this.bodyTypes,
+        animations: Object.keys(this.animations),
+        equipment: {
+          types: equipmentTypes,
+          variants: variants
+        }
+      };
+    } catch (error) {
+      throw new Error(`Failed to get available options: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get all equipment types from spritesheets directory
+   * @private
+   */
+  async getEquipmentTypes(basePath) {
+    try {
+      const entries = await fs.readdir(basePath, { withFileTypes: true });
+      return entries
+        .filter(entry => entry.isDirectory())
+        .map(entry => entry.name);
+    } catch (error) {
+      throw new Error(`Failed to get equipment types: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get all variants for a specific equipment type
+   * @private
+   */
+  async getVariants(typePath) {
+    try {
+      const entries = await fs.readdir(typePath, { withFileTypes: true });
+      return entries
+        .filter(entry => entry.isDirectory())
+        .map(entry => entry.name);
+    } catch (error) {
+      throw new Error(`Failed to get variants for ${typePath}: ${error.message}`);
+    }
   }
 }
 

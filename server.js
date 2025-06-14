@@ -12,7 +12,7 @@ const port = process.env.PORT || 3000;
 
 // Enable CORS and JSON parsing
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 
 // Create a single instance of the generator
 const generator = new CharacterGenerator();
@@ -20,6 +20,20 @@ const generator = new CharacterGenerator();
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
+});
+
+// Get available options endpoint
+app.get('/api/options', async (req, res) => {
+  try {
+    const options = await generator.getAvailableOptions();
+    res.json(options);
+  } catch (error) {
+    console.error('Error getting options:', error);
+    res.status(500).json({
+      error: 'Failed to get available options',
+      details: error.message
+    });
+  }
 });
 
 // Generate character endpoint
@@ -53,5 +67,6 @@ app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
   console.log('Available endpoints:');
   console.log('  GET  /health');
+  console.log('  GET  /api/options');
   console.log('  POST /api/generate');
 }); 

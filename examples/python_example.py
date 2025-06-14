@@ -11,6 +11,30 @@ import io
 import requests
 from pathlib import Path
 
+def print_equipment_options(equipment_options, indent=0, prefix=""):
+    """
+    Recursively print equipment options with proper indentation for any depth of nesting
+    
+    Args:
+        equipment_options: Dictionary containing equipment options
+        indent: Current indentation level
+        prefix: Prefix string for the current item (used for nested items)
+    """
+    indent_str = "  " * indent
+    
+    if isinstance(equipment_options, dict):
+        for key, value in equipment_options.items():
+            current_path = f"{prefix}/{key}" if prefix else key
+            print(f"{indent_str}{key}:")
+            print_equipment_options(value, indent + 1, current_path)
+    elif isinstance(equipment_options, list):
+        for item in equipment_options:
+            print(f"{indent_str}- {item}")
+    elif equipment_options is None:
+        print(f"{indent_str}(no variants)")
+    else:
+        print(f"{indent_str}- {equipment_options}")
+
 def load_available_options():
     """
     Load available options from the JSON file
@@ -38,6 +62,8 @@ def generate_character_spritesheet():
         # Print available options for debugging
         print("\nAvailable options:")
         print("Body Types:", available_options["bodyTypes"])
+        print("\nEquipment Types:")
+        print_equipment_options(available_options["equipment"]["variants"])
         
         # Character configuration using available options
         config = {

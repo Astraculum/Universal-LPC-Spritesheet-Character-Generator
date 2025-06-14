@@ -11,58 +11,81 @@ import io
 import requests
 from pathlib import Path
 
+def load_available_options():
+    """
+    Load available options from the JSON file
+    """
+    try:
+        with open('available-options.json', 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print("Error: available-options.json not found")
+        return None
+
 def generate_character_spritesheet():
     """
     Generate a character spritesheet using the API
     """
     # API endpoint (assuming you're running the generator locally)
     api_url = "http://localhost:3000/api/generate"
-    options_url = "http://localhost:3000/api/options"
     
     try:
-        # First get available options
-        options_response = requests.get(options_url)
-        options_response.raise_for_status()
-        available_options = options_response.json()
+        # Load available options from JSON file
+        available_options = load_available_options()
+        if not available_options:
+            return
         
         # Print available options for debugging
         print("\nAvailable options:")
         print("Body Types:", available_options["bodyTypes"])
         print("Animations:", available_options["animations"])
-        print("\nEquipment variants:")
-        for eq_type, variants in available_options["equipment"]["variants"].items():
-            print(f"{eq_type}: {variants}")
         
         # Character configuration using available options
         config = {
-            "bodyType": "male",  # Use a basic body type
+            "bodyType": "male",  # Basic body type
             "bodyColor": "light",
-            "animations": ["idle"],  # Start with just one animation for testing
-            "equipment": {}
+            "animations": ["idle", "walk", "run", "attack"],  # Common animations
+            "equipment": {
+                # Hair - using a common style
+                "hair": "bangs",
+                
+                # Eyes - using human eyes
+                "eyes": "human",
+                
+                # Facial features - adding glasses
+                "facial": "glasses",
+                
+                # Head - using a basic face
+                "head": "faces",
+                
+                # Torso - using clothes
+                "torso": "clothes",
+                
+                # Legs - using pants
+                "legs": "pants",
+                
+                # Feet - using shoes
+                "feet": "shoes",
+                
+                # Arms - using gloves
+                "arms": "gloves",
+                
+                # Hat - using a helmet
+                "hat": "helmet",
+                
+                # Weapon - using a sword
+                "weapon": "sword",
+                
+                # Shield - using a basic shield
+                "shield": "crusader",
+                
+                # Neck - using a necklace
+                "neck": "necklace",
+                
+                # Shoulders - using plate armor
+                "shoulders": "plate"
+            }
         }
-        
-        # Add equipment only if they exist in available options
-        equipment_types = ["hair", "eyes", "armor", "weapon", "shield", "helmet", "boots"]
-        for eq_type in equipment_types:
-            if eq_type in available_options["equipment"]["variants"]:
-                variants = available_options["equipment"]["variants"][eq_type]
-                if variants:  # Only add if there are variants available
-                    # Use specific variants that we know exist
-                    if eq_type == "weapon":
-                        config["equipment"][eq_type] = "sword"
-                    elif eq_type == "hair":
-                        config["equipment"][eq_type] = "bangs"
-                    elif eq_type == "eyes":
-                        config["equipment"][eq_type] = "blue"
-                    elif eq_type == "armor":
-                        config["equipment"][eq_type] = "leather"
-                    elif eq_type == "shield":
-                        config["equipment"][eq_type] = "wooden"
-                    elif eq_type == "helmet":
-                        config["equipment"][eq_type] = "leather_cap"
-                    elif eq_type == "boots":
-                        config["equipment"][eq_type] = "leather_boots"
-                    print(f"Selected {eq_type}: {config['equipment'][eq_type]}")
         
         print("\nFinal configuration:")
         print(json.dumps(config, indent=2))
@@ -85,7 +108,6 @@ def generate_character_spritesheet():
         output_dir = Path("output")
         output_dir.mkdir(exist_ok=True)
         image.save(output_dir / "character_spritesheet.png")
-        
         
         # Save the metadata
         with open(output_dir / "character_metadata.json", "w") as f:

@@ -254,7 +254,34 @@ class CharacterGenerator {
     
     // For other equipment types
     const anim = item.animations[0]; // Use the first animation for now
-    return join(basePath, item.type, item.variant, bodyTypeDir, `${anim}.png`);
+    
+    // Try different possible paths
+    const possiblePaths = [
+      // Standard path
+      join(basePath, item.type, item.variant, bodyTypeDir, `${anim}.png`),
+      // Universal path
+      join(basePath, item.type, item.variant, 'universal', `${anim}.png`),
+      // Background path
+      join(basePath, item.type, item.variant, 'background', `${anim}.png`),
+      // Foreground path
+      join(basePath, item.type, item.variant, 'foreground', `${anim}.png`),
+      // Simple path
+      join(basePath, item.type, item.variant, `${anim}.png`)
+    ];
+    
+    // Return the first path that exists
+    for (const path of possiblePaths) {
+      try {
+        if (fs.existsSync(path)) {
+          return path;
+        }
+      } catch (error) {
+        console.warn(`Could not check path ${path}: ${error.message}`);
+      }
+    }
+    
+    // If no path exists, return the standard path
+    return possiblePaths[0];
   }
 
   /**
@@ -267,26 +294,14 @@ class CharacterGenerator {
     try {
       // Get all equipment types (directories in spritesheets)
       const equipmentTypes = await this.getEquipmentTypes(basePath);
+      console.log('Found equipment types:', equipmentTypes);
       
       // Get variants for each equipment type
       const variants = {};
       for (const type of equipmentTypes) {
-        variants[type] = await this.getVariants(join(basePath, type));
-      }
-      
-      // Filter out invalid variants
-      const validVariants = {};
-      for (const [type, typeVariants] of Object.entries(variants)) {
-        validVariants[type] = typeVariants.filter(variant => {
-          // Check if the variant directory exists and has the required animation files
-          const variantPath = join(basePath, type, variant, 'adult');
-          try {
-            return fs.existsSync(variantPath);
-          } catch (error) {
-            console.warn(`Warning: Could not check variant ${type}/${variant}: ${error.message}`);
-            return false;
-          }
-        });
+        const typePath = join(basePath, type);
+        variants[type] = await this.getVariants(typePath);
+        console.log(`Variants for ${type}:`, variants[type]);
       }
       
       return {
@@ -294,10 +309,11 @@ class CharacterGenerator {
         animations: Object.keys(this.animations),
         equipment: {
           types: equipmentTypes,
-          variants: validVariants
+          variants: variants
         }
       };
     } catch (error) {
+      console.error('Error in getAvailableOptions:', error);
       throw new Error(`Failed to get available options: ${error.message}`);
     }
   }
@@ -323,12 +339,58 @@ class CharacterGenerator {
    */
   async getVariants(typePath) {
     try {
+      // First check if the directory exists
+      try {
+        await fs.access(typePath);
+      } catch (error) {
+        console.warn(`Directory not found: ${typePath}`);
+        return [];
+      }
+
       const entries = await fs.readdir(typePath, { withFileTypes: true });
-      return entries
+      const variants = entries
         .filter(entry => entry.isDirectory())
         .map(entry => entry.name);
+
+      // For each variant, check if it has any subdirectories
+      const validVariants = [];
+      for (const variant of variants) {
+        const variantPath = join(typePath, variant);
+        try {
+          const variantEntries = await fs.readdir(variantPath, { withFileTypes: true });
+          
+          // Check if it has any subdirectories
+          const hasSubdirectories = variantEntries.some(entry => entry.isDirectory());
+          
+          if (hasSubdirectories) {
+            validVariants.push(variant);
+          }
+        } catch (error) {
+          console.warn(`Could not read variant directory ${variantPath}: ${error.message}`);
+        }
+      }
+
+      console.log(`Found ${validVariants.length} valid variants for ${typePath}:`, validVariants);
+      return validVariants;
     } catch (error) {
-      throw new Error(`Failed to get variants for ${typePath}: ${error.message}`);
+      console.error(`Error getting variants for ${typePath}: ${error.message}`);
+      return [];
+    }
+  }
+
+  /**
+   * Export all available options to a JSON file
+   * @param {string} outputPath - Path where the JSON file should be saved
+   * @returns {Promise<void>}
+   */
+  async exportOptionsToJson(outputPath) {
+    try {
+      const options = await this.getAvailableOptions();
+      const jsonContent = JSON.stringify(options, null, 2);
+      await fs.writeFile(outputPath, jsonContent, 'utf8');
+      console.log(`Options exported successfully to ${outputPath}`);
+    } catch (error) {
+      throw new Error(`Failed to export options to JSON: ${error.message}`);
     }
   }
 }

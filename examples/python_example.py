@@ -11,6 +11,17 @@ import io
 import requests
 from pathlib import Path
 
+AVAILABLE_EQUIPMENT_TYPES = [
+    "armor",
+    "body",
+    "hair",
+    "head",
+    "mouth",
+    "neck",
+    "shoulders",
+    "weapon",
+]
+
 def print_equipment_options(equipment_options, indent=0, prefix=""):
     """
     Recursively print equipment options with proper indentation for any depth of nesting
@@ -108,11 +119,25 @@ def generate_config_from_options(available_options):
     
     # For each equipment type, randomly select an option
     for equipment_type, variants in equipment_variants.items():
-        res = ""
-        while isinstance(variants, dict):
-            key,variants = random.choice(list(variants.items()))
-            res += f"{key}/" if not key.endswith(".png") else f"{key}"
-        config["equipment"][equipment_type] = res
+        if equipment_type not in AVAILABLE_EQUIPMENT_TYPES:
+            continue
+        if isinstance(variants, dict):
+            # 递归获取所有可能的PNG路径
+            png_paths = []
+            def collect_png_paths(current_dict, current_path=""):
+                for key, value in current_dict.items():
+                    if isinstance(value, dict):
+                        new_path = f"{current_path}/{key}" if current_path else key
+                        collect_png_paths(value, new_path)
+                    elif isinstance(value, str) and value.endswith('.png'):
+                        png_paths.append(f"{current_path}/{value}" if current_path else value)
+            
+            collect_png_paths(variants)
+            
+            # 随机选择一个PNG路径
+            if png_paths:
+                selected_path = random.choice(png_paths)
+                config["equipment"][equipment_type] = selected_path
     
     return config
 
@@ -178,7 +203,7 @@ def generate_character_spritesheet():
     except requests.exceptions.RequestException as e:
         print(f"Error making API request: {e}")
         if hasattr(e.response, 'text'):
-            print(f"Error details: {e.response}")
+            print(f"Error details: {e.response.text}") # type: ignore
     except Exception as e:
         print(f"Error processing response: {e}")
 

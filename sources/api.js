@@ -218,71 +218,25 @@ class CharacterGenerator {
    */
   getImagePath(item) {
     const basePath = join(__dirname, '..', 'spritesheets');
-    const bodyTypeDir = this.bodyTypeMap[item.bodyType] || 'adult';
     
     // Special case for body
     if (item.type === 'body') {
         return join(basePath, 'body', 'bodies', item.bodyType, 'idle.png');
     }
     
-    // Handle equipment with nested variants
-    if (item.subvariant) {
-        const possiblePaths = [
-            // Standard path with subvariant
-            join(basePath, item.type, item.variant, item.subvariant, bodyTypeDir, 'idle.png'),
-            // Universal path with subvariant
-            join(basePath, item.type, item.variant, item.subvariant, 'universal', 'idle.png'),
-            // Background path with subvariant
-            join(basePath, item.type, item.variant, item.subvariant, 'background', 'idle.png'),
-            // Foreground path with subvariant
-            join(basePath, item.type, item.variant, item.subvariant, 'foreground', 'idle.png'),
-            // Simple path with subvariant
-            join(basePath, item.type, item.variant, item.subvariant, 'idle.png'),
-            // Fallback to variant-only path
-            join(basePath, item.type, item.variant, bodyTypeDir, 'idle.png')
-        ];
-        
-        // Return the first path that exists
-        for (const path of possiblePaths) {
-            try {
-                if (fs.existsSync(path)) {
-                    return path;
-                }
-            } catch (error) {
-                console.warn(`Could not check path ${path}: ${error.message}`);
-            }
-        }
-        
-        return possiblePaths[0];
+    // 如果variant是完整路径，直接使用
+    if (typeof item.variant === 'string' && item.variant.endsWith('.png')) {
+        return join(basePath, item.variant);
     }
     
-    // For simple equipment types (no subvariants)
-    const possiblePaths = [
-        // Standard path
-        join(basePath, item.type, item.variant, bodyTypeDir, 'idle.png'),
-        // Universal path
-        join(basePath, item.type, item.variant, 'universal', 'idle.png'),
-        // Background path
-        join(basePath, item.type, item.variant, 'background', 'idle.png'),
-        // Foreground path
-        join(basePath, item.type, item.variant, 'foreground', 'idle.png'),
-        // Simple path
-        join(basePath, item.type, item.variant, 'idle.png')
-    ];
-    
-    // Return the first path that exists
-    for (const path of possiblePaths) {
-        try {
-            if (fs.existsSync(path)) {
-                return path;
-            }
-        } catch (error) {
-            console.warn(`Could not check path ${path}: ${error.message}`);
-        }
+    // 如果subvariant是完整路径，直接使用
+    if (item.subvariant && typeof item.subvariant === 'string' && item.subvariant.endsWith('.png')) {
+        return join(basePath, item.subvariant);
     }
     
-    return possiblePaths[0];
-}
+    // 如果都不是完整路径，返回错误
+    throw new Error(`Invalid path format for ${item.type}. Please provide a complete PNG path.`);
+  }
 
   /**
    * Get all available options for character generation

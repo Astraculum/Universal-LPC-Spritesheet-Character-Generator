@@ -48,45 +48,45 @@ app.post('/api/generate', async (req, res) => {
     }
     
     // Validate equipment paths
-    if (config.equipment) {
-      for (const [type, variantInfo] of Object.entries(config.equipment)) {
-        // Handle both string variants and nested variant objects
-        const variant = typeof variantInfo === 'string' ? variantInfo : variantInfo.variant;
-        const subvariant = typeof variantInfo === 'object' ? variantInfo.subvariant : null;
+    // if (config.equipment) {
+    //   for (const [type, variantInfo] of Object.entries(config.equipment)) {
+    //     // Handle both string variants and nested variant objects
+    //     const variant = typeof variantInfo === 'string' ? variantInfo : variantInfo.variant;
+    //     const subvariant = typeof variantInfo === 'object' ? variantInfo.subvariant : null;
         
-        // Build possible paths based on the variant structure
-        const possiblePaths = [
-          join(__dirname, 'spritesheets', type, variant, 'adult'),
-          join(__dirname, 'spritesheets', type, variant, 'universal')
-        ];
+    //     // Build possible paths based on the variant structure
+    //     const possiblePaths = [
+    //       join(__dirname, 'spritesheets', type, variant, 'adult'),
+    //       join(__dirname, 'spritesheets', type, variant, 'universal')
+    //     ];
         
-        if (subvariant) {
-          possiblePaths.unshift(
-            join(__dirname, 'spritesheets', type, variant, subvariant, 'adult'),
-            join(__dirname, 'spritesheets', type, variant, subvariant, 'universal')
-          );
-        }
+    //     if (subvariant) {
+    //       possiblePaths.unshift(
+    //         join(__dirname, 'spritesheets', type, variant, subvariant, 'adult'),
+    //         join(__dirname, 'spritesheets', type, variant, subvariant, 'universal')
+    //       );
+    //     }
         
-        // Check if at least one valid path exists
-        let validPathFound = false;
-        for (const path of possiblePaths) {
-          try {
-            await fs.access(path);
-            validPathFound = true;
-            break;
-          } catch (error) {
-            continue;
-          }
-        }
+    //     // Check if at least one valid path exists
+    //     let validPathFound = false;
+    //     for (const path of possiblePaths) {
+    //       try {
+    //         await fs.access(path);
+    //         validPathFound = true;
+    //         break;
+    //       } catch (error) {
+    //         continue;
+    //       }
+    //     }
         
-        if (!validPathFound) {
-          return res.status(400).json({
-            error: `Invalid equipment path: ${type}/${variant}${subvariant ? '/' + subvariant : ''}`,
-            details: 'No valid equipment path found'
-          });
-        }
-      }
-    }
+    //     if (!validPathFound) {
+    //       return res.status(400).json({
+    //         error: `Invalid equipment path: ${type}/${variant}${subvariant ? '/' + subvariant : ''}`,
+    //         details: 'No valid equipment path found'
+    //       });
+    //     }
+    //   }
+    // }
     
     // Generate the character
     const result = await generator.generateCharacter(config);

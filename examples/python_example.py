@@ -72,21 +72,24 @@ def flatten_options(options, prefix="", result=None):
 
 import random
 
-def get_random_path(options, current_path=""):
+def get_random_option(options):
     """
-    Recursively get a random path from the options structure
-    Returns a tuple of (path, value)
+    Recursively get a random option from the options structure
     """
     if isinstance(options, dict):
         # Randomly select a key
         key = random.choice(list(options.keys()))
-        new_path = f"{current_path}/{key}" if current_path else key
-        value, _ = get_random_path(options[key], new_path)
-        return value, new_path
+        value = get_random_option(options[key])
+        if value is None:
+            return key
+        return {
+            "variant": key,
+            "subvariant": value
+        }
     elif isinstance(options, list) and options:
-        return random.choice(options), current_path
+        return random.choice(options)
     else:
-        return options, current_path
+        return None
 
 def generate_config_from_options(available_options):
     """
@@ -104,15 +107,14 @@ def generate_config_from_options(available_options):
     # For each equipment type, randomly select an option
     for equipment_type, variants in equipment_variants.items():
         if variants:  # If there are variants available
-            value, path = get_random_path(variants)
-            if value and path:
+            value = get_random_option(variants)
+            if value:
                 # Create the flattened path
-                full_path = f"./spritesheets/{equipment_type}"
-                # Join all parts except the first one (equipment_type) with the value
-                path_parts = path.split('/')[1:] if '/' in path else [path]
-                if value and isinstance(value, str):
-                    path_parts.append(value)
-                config["equipment"][full_path] = '/'.join(path_parts)
+                full_path = f"{equipment_type}"
+                while "subvariant" in value:
+                    full_path = f"{full_path}/{value['variant']}"
+                    value = value["subvariant"]
+                config["equipment"][full_path] = value
     
     return config
     

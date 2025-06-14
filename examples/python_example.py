@@ -46,6 +46,72 @@ def load_available_options():
         print("Error: available-options.json not found")
         return None
 
+def flatten_options(options, prefix="", result=None):
+    """
+    Convert nested options structure into flat paths
+    Example:
+    Input: {"armor": {"plate": {"shoulder": ["gold", "silver"]}}}
+    Output: {"armor/plate/shoulder": ["gold", "silver"]}
+    """
+    if result is None:
+        result = {}
+    
+    if isinstance(options, dict):
+        for key, value in options.items():
+            new_prefix = f"{prefix}/{key}" if prefix else key
+            if isinstance(value, (dict, list)):
+                flatten_options(value, new_prefix, result)
+            else:
+                result[new_prefix] = value
+    elif isinstance(options, list):
+        result[prefix] = options
+    else:
+        result[prefix] = [options] if options is not None else []
+    
+    return result
+
+def generate_config_from_options(available_options):
+    """
+    Generate character configuration using the first available option for each type
+    """
+    config = {
+        "bodyType": available_options["bodyTypes"][0],  # Use first available body type
+        "bodyColor": "light",  # Default body color
+        "equipment": {}
+    }
+    
+    # Get equipment variants and flatten them
+    equipment_variants = available_options["equipment"]["variants"]
+    flat_variants = flatten_options(equipment_variants)
+    
+    # For each equipment type path, get the first available option
+    for path, options in flat_variants.items():
+        if not options:  # Skip if no options available
+            continue
+            
+        # Split the path into parts
+        parts = path.split('/')
+        equipment_type = parts[0]
+        
+        # Get the first option
+        first_option = options[0] if isinstance(options, list) else options
+        
+        # Build the equipment configuration
+        if len(parts) == 2:
+            config["equipment"][equipment_type] = {
+                "variant": parts[1],
+                "subvariant": first_option
+            }
+        elif len(parts) > 2:
+            config["equipment"][equipment_type] = {
+                "variant": parts[1],
+                "subvariant": "/".join(parts[2:] + [first_option])
+            }
+        else:
+            config["equipment"][equipment_type] = first_option
+    
+    return config
+
 def generate_character_spritesheet():
     """
     Generate a character spritesheet using the API
@@ -65,90 +131,8 @@ def generate_character_spritesheet():
         print("\nEquipment Types:")
         print_equipment_options(available_options["equipment"]["variants"])
         
-        # Character configuration using available options
-        config = {
-    "bodyType": "male",  # Basic body type
-    "bodyColor": "light",
-    "equipment": {
-        # Hair - using adult bangs
-        "hair": {
-            "variant": "bangs",
-            "subvariant": "adult"
-        },
-        
-        # Eyes - using adult human eyes
-        "eyes": {
-            "variant": "human",
-            "subvariant": "adult"
-        },
-        
-        # Facial features - adding round glasses
-        "facial": {
-            "variant": "glasses",
-            "subvariant": "round"
-        },
-        
-        # Head - using male face
-        "head": {
-            "variant": "faces",
-            "subvariant": "male"
-        },
-        
-        # Torso - using a tunic
-        "torso": {
-            "variant": "clothes",
-            "subvariant": "tunic"
-        },
-        
-        # Legs - using male pants
-        "legs": {
-            "variant": "pants",
-            "subvariant": "male"
-        },
-        
-        # Feet - using basic shoes
-        "feet": {
-            "variant": "shoes",
-            "subvariant": "basic"
-        },
-        
-        # Arms - using male gloves
-        "arms": {
-            "variant": "gloves",
-            "subvariant": "male"
-        },
-        
-        # Hat - using a greathelm
-        "hat": {
-            "variant": "helmet",
-            "subvariant": "greathelm"
-        },
-        
-        # Weapon - using a longsword
-        "weapon": {
-            "variant": "sword",
-            "subvariant": "long"
-        },
-        
-        # Shield - using a crusader shield
-        "shield": {
-            "variant": "crusader",
-            "subvariant": "basic"
-        },
-        
-        # Neck - using a simple necklace
-        "neck": {
-            "variant": "necklace",
-            "subvariant": "simple"
-        },
-        
-        # Shoulders - using male plate armor
-        "shoulders": {
-            "variant": "plate",
-            "subvariant": "male"
-        }
-    }
-}
+        # Generate character configuration using available options
+        config = generate_config_from_options(available_options)
         print("\nFinal configuration:")
         print(json.dumps(config, indent=2))
         

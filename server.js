@@ -3,6 +3,7 @@ import cors from 'cors';
 import CharacterGenerator from './sources/api.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import fs from 'fs/promises';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -47,6 +48,21 @@ app.post('/api/generate', async (req, res) => {
     }
     if (!config.animations || !Array.isArray(config.animations) || config.animations.length === 0) {
       return res.status(400).json({ error: 'animations array is required' });
+    }
+    
+    // Validate equipment paths
+    if (config.equipment) {
+      for (const [type, variant] of Object.entries(config.equipment)) {
+        const path = join(__dirname, 'spritesheets', type, variant, 'adult');
+        try {
+          await fs.access(path);
+        } catch (error) {
+          return res.status(400).json({
+            error: `Invalid equipment path: ${type}/${variant}`,
+            details: error.message
+          });
+        }
+      }
     }
     
     // Generate the character

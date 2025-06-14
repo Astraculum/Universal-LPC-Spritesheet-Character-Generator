@@ -243,7 +243,6 @@ class CharacterGenerator {
     // Special case for hair
     if (item.type === 'hair') {
       const anim = item.animations[0]; // Use the first animation for now
-      // Hair files are organized by style and then by animation
       return join(basePath, 'hair', item.variant, bodyTypeDir, `${anim}.png`);
     }
     
@@ -275,12 +274,27 @@ class CharacterGenerator {
         variants[type] = await this.getVariants(join(basePath, type));
       }
       
+      // Filter out invalid variants
+      const validVariants = {};
+      for (const [type, typeVariants] of Object.entries(variants)) {
+        validVariants[type] = typeVariants.filter(variant => {
+          // Check if the variant directory exists and has the required animation files
+          const variantPath = join(basePath, type, variant, 'adult');
+          try {
+            return fs.existsSync(variantPath);
+          } catch (error) {
+            console.warn(`Warning: Could not check variant ${type}/${variant}: ${error.message}`);
+            return false;
+          }
+        });
+      }
+      
       return {
         bodyTypes: this.bodyTypes,
         animations: Object.keys(this.animations),
         equipment: {
           types: equipmentTypes,
-          variants: variants
+          variants: validVariants
         }
       };
     } catch (error) {
@@ -296,7 +310,7 @@ class CharacterGenerator {
     try {
       const entries = await fs.readdir(basePath, { withFileTypes: true });
       return entries
-        .filter(entry => entry.isDirectory())
+        .filter(entry => entry.isDirectory() && entry.name !== 'body') // Exclude body directory
         .map(entry => entry.name);
     } catch (error) {
       throw new Error(`Failed to get equipment types: ${error.message}`);

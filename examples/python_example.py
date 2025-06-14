@@ -17,24 +17,56 @@ def generate_character_spritesheet():
     """
     # API endpoint (assuming you're running the generator locally)
     api_url = "http://localhost:3000/api/generate"
-    
-    # Character configuration
-    config = {
-        "bodyType": "male",
-        "bodyColor": "light",
-        "animations": ["idle", "walk", "run"],
-        "equipment": {
-            "hair": "bangs",
-            "eyes": "blue",
-            "armor": "leather",
-            "weapon": "sword",
-            "shield": "wooden",
-            "helmet": "leather_cap",
-            "boots": "leather_boots"
-        }
-    }
+    options_url = "http://localhost:3000/api/options"
     
     try:
+        # First get available options
+        options_response = requests.get(options_url)
+        options_response.raise_for_status()
+        available_options = options_response.json()
+        
+        # Print available options for debugging
+        print("\nAvailable options:")
+        print("Body Types:", available_options["bodyTypes"])
+        print("Animations:", available_options["animations"])
+        print("\nEquipment variants:")
+        for eq_type, variants in available_options["equipment"]["variants"].items():
+            print(f"{eq_type}: {variants}")
+        
+        # Character configuration using available options
+        config = {
+            "bodyType": "male",  # Use a basic body type
+            "bodyColor": "light",
+            "animations": ["idle"],  # Start with just one animation for testing
+            "equipment": {}
+        }
+        
+        # Add equipment only if they exist in available options
+        equipment_types = ["hair", "eyes", "armor", "weapon", "shield", "helmet", "boots"]
+        for eq_type in equipment_types:
+            if eq_type in available_options["equipment"]["variants"]:
+                variants = available_options["equipment"]["variants"][eq_type]
+                if variants:  # Only add if there are variants available
+                    # Use specific variants that we know exist
+                    if eq_type == "weapon":
+                        config["equipment"][eq_type] = "sword"
+                    elif eq_type == "hair":
+                        config["equipment"][eq_type] = "bangs"
+                    elif eq_type == "eyes":
+                        config["equipment"][eq_type] = "blue"
+                    elif eq_type == "armor":
+                        config["equipment"][eq_type] = "leather"
+                    elif eq_type == "shield":
+                        config["equipment"][eq_type] = "wooden"
+                    elif eq_type == "helmet":
+                        config["equipment"][eq_type] = "leather_cap"
+                    elif eq_type == "boots":
+                        config["equipment"][eq_type] = "leather_boots"
+                    print(f"Selected {eq_type}: {config['equipment'][eq_type]}")
+        
+        print("\nFinal configuration:")
+        print(json.dumps(config, indent=2))
+        
         # Make the API request
         response = requests.post(api_url, json=config)
         response.raise_for_status()
@@ -53,6 +85,7 @@ def generate_character_spritesheet():
         output_dir = Path("output")
         output_dir.mkdir(exist_ok=True)
         image.save(output_dir / "character_spritesheet.png")
+        
         
         # Save the metadata
         with open(output_dir / "character_metadata.json", "w") as f:

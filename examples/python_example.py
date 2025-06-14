@@ -70,45 +70,51 @@ def flatten_options(options, prefix="", result=None):
     
     return result
 
+import random
+
+def get_random_path(options, current_path=""):
+    """
+    Recursively get a random path from the options structure
+    Returns a tuple of (path, value)
+    """
+    if isinstance(options, dict):
+        # Randomly select a key
+        key = random.choice(list(options.keys()))
+        new_path = f"{current_path}/{key}" if current_path else key
+        value, _ = get_random_path(options[key], new_path)
+        return value, new_path
+    elif isinstance(options, list) and options:
+        return random.choice(options), current_path
+    else:
+        return options, current_path
+
 def generate_config_from_options(available_options):
     """
-    Generate character configuration using the first available option for each type
+    Generate character configuration using random available options
     """
     config = {
-        "bodyType": available_options["bodyTypes"][0],  # Use first available body type
+        "bodyType": random.choice(available_options["bodyTypes"]),  # Use random body type
         "bodyColor": "light",  # Default body color
         "equipment": {}
     }
     
-    # Get equipment variants and flatten them
+    # Get equipment variants
     equipment_variants = available_options["equipment"]["variants"]
-    flat_variants = flatten_options(equipment_variants)
     
-    # For each equipment type path, get the first available option
-    for path, options in flat_variants.items():
-        if not options:  # Skip if no options available
-            continue
-            
-        # Split the path into parts
-        parts = path.split('/')
-        equipment_type = parts[0]
-        
-        # Get the first option
-        first_option = options[0] if isinstance(options, list) else options
-        
-        # Build the equipment configuration
-        if len(parts) == 2:
-            config["equipment"][equipment_type] = {
-                "variant": parts[1],
-                "subvariant": first_option
-            }
-        elif len(parts) > 2:
-            config["equipment"][equipment_type] = {
-                "variant": parts[1],
-                "subvariant": "/".join(parts[2:] + [first_option])
-            }
-        else:
-            config["equipment"][equipment_type] = first_option
+    # For each equipment type, randomly select an option
+    for equipment_type, variants in equipment_variants.items():
+        if variants:  # If there are variants available
+            value, path = get_random_path(variants)
+            if value and path:
+                # Create the flattened path
+                full_path = f"./spritesheets/{equipment_type}"
+                # Join all parts except the first one (equipment_type) with the value
+                path_parts = path.split('/')[1:] if '/' in path else [path]
+                if value and isinstance(value, str):
+                    path_parts.append(value)
+                config["equipment"][full_path] = '/'.join(path_parts)
+    
+    return config
     
     return config
 
@@ -133,7 +139,7 @@ def generate_character_spritesheet():
         
         # Generate character configuration using available options
         config = generate_config_from_options(available_options)
-        print("\nFinal configuration:")
+        # print("\nFinal configuration:")
         print(json.dumps(config, indent=2))
         
         # Make the API request

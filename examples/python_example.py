@@ -94,6 +94,8 @@ def get_random_option(options):
 def generate_config_from_options(available_options):
     """
     Generate character configuration using random available options
+    Args:
+        available_options: Dictionary containing nested equipment structure
     """
     config = {
         "bodyType": random.choice(available_options["bodyTypes"]),  # Use random body type
@@ -102,21 +104,15 @@ def generate_config_from_options(available_options):
     }
     
     # Get equipment variants
-    equipment_variants = available_options["equipment"]["variants"]
+    equipment_variants = available_options["equipments"]
     
     # For each equipment type, randomly select an option
     for equipment_type, variants in equipment_variants.items():
-        if variants:  # If there are variants available
-            value = get_random_option(variants)
-            if value:
-                # Create the flattened path
-                full_path = f"{equipment_type}"
-                while "subvariant" in value:
-                    full_path = f"{full_path}/{value['variant']}"
-                    value = value["subvariant"]
-                config["equipment"][full_path] = value
-    
-    return config
+        res = ""
+        while isinstance(variants, dict):
+            key,variants = random.choice(list(variants.items()))
+            res += f"{key}/" if not key.endswith(".png") else f"{key}"
+        config["equipment"][equipment_type] = res
     
     return config
 
@@ -137,7 +133,7 @@ def generate_character_spritesheet():
         print("\nAvailable options:")
         print("Body Types:", available_options["bodyTypes"])
         print("\nEquipment Types:")
-        print_equipment_options(available_options["equipment"]["variants"])
+        # print_equipment_options(available_options["equipments"])
         
         # Generate character configuration using available options
         config = generate_config_from_options(available_options)
@@ -182,7 +178,7 @@ def generate_character_spritesheet():
     except requests.exceptions.RequestException as e:
         print(f"Error making API request: {e}")
         if hasattr(e.response, 'text'):
-            print(f"Error details: {e.response.text}")
+            print(f"Error details: {e.response}")
     except Exception as e:
         print(f"Error processing response: {e}")
 

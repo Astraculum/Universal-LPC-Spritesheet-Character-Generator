@@ -44,46 +44,46 @@ def generate_character_spritesheet():
         config = {
             "bodyType": "male",  # Basic body type
             "bodyColor": "light",
-            "animations": ["idle", "walk", "run", "attack"],  # Common animations
+            "animations": ["idle", "walk", "run", "slash"],  # Using valid animations
             "equipment": {
-                # Hair - using a common style
-                "hair": "bangs",
+                # Hair - using adult bangs
+                "hair": "bangs/adult",
                 
-                # Eyes - using human eyes
-                "eyes": "human",
+                # Eyes - using adult human eyes
+                "eyes": "human/adult",
                 
-                # Facial features - adding glasses
-                "facial": "glasses",
+                # Facial features - adding round glasses
+                "facial": "glasses/round",
                 
-                # Head - using a basic face
-                "head": "faces",
+                # Head - using male face
+                "head": "faces/male",
                 
-                # Torso - using clothes
-                "torso": "clothes",
+                # Torso - using a tunic
+                "torso": "clothes/tunic",
                 
-                # Legs - using pants
-                "legs": "pants",
+                # Legs - using male pants
+                "legs": "pants/male",
                 
-                # Feet - using shoes
-                "feet": "shoes",
+                # Feet - using basic shoes
+                "feet": "shoes/basic",
                 
-                # Arms - using gloves
-                "arms": "gloves",
+                # Arms - using male gloves
+                "arms": "gloves/male",
                 
-                # Hat - using a helmet
-                "hat": "helmet",
+                # Hat - using a greathelm
+                "hat": "helmet/greathelm",
                 
-                # Weapon - using a sword
-                "weapon": "sword",
+                # Weapon - using a longsword
+                "weapon": "sword/longsword",
                 
-                # Shield - using a basic shield
+                # Shield - using a crusader shield
                 "shield": "crusader",
                 
-                # Neck - using a necklace
-                "neck": "necklace",
+                # Neck - using a simple necklace
+                "neck": "necklace/simple",
                 
-                # Shoulders - using plate armor
-                "shoulders": "plate"
+                # Shoulders - using male plate armor
+                "shoulders": "plate/male"
             }
         }
         
@@ -127,6 +127,8 @@ def generate_character_spritesheet():
             
     except requests.exceptions.RequestException as e:
         print(f"Error making API request: {e}")
+        if hasattr(e.response, 'text'):
+            print(f"Error details: {e.response.text}")
     except Exception as e:
         print(f"Error processing response: {e}")
 

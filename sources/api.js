@@ -46,6 +46,16 @@ class CharacterGenerator {
       backslash: { frames: 13, row: 46 },
       halfslash: { frames: 7, row: 50 }
     };
+
+    // Map body types to their corresponding directories
+    this.bodyTypeMap = {
+      male: 'adult',
+      female: 'adult',
+      teen: 'teen',
+      child: 'child',
+      muscular: 'adult',
+      pregnant: 'adult'
+    };
   }
 
   /**
@@ -152,6 +162,7 @@ class CharacterGenerator {
     const imagePromises = this.itemsToDraw.map(async item => {
       try {
         const imagePath = this.getImagePath(item);
+        console.log(`Loading image from: ${imagePath}`); // Debug log
         const img = await loadImage(imagePath);
         this.images[item.type] = img;
       } catch (error) {
@@ -221,7 +232,30 @@ class CharacterGenerator {
    */
   getImagePath(item) {
     const basePath = join(__dirname, '..', 'spritesheets');
-    return join(basePath, item.type, item.bodyType, `${item.variant}.png`);
+    const bodyTypeDir = this.bodyTypeMap[item.bodyType] || 'adult';
+    
+    // Special case for body
+    if (item.type === 'body') {
+      // For body, we need to load each animation separately
+      const anim = item.animations[0]; // Use the first animation for now
+      return join(basePath, 'body', 'bodies', item.bodyType, `${anim}.png`);
+    }
+    
+    // Special case for hair
+    if (item.type === 'hair') {
+      const anim = item.animations[0]; // Use the first animation for now
+      return join(basePath, 'hair', item.variant, bodyTypeDir, `${anim}.png`);
+    }
+    
+    // Special case for eyes
+    if (item.type === 'eyes') {
+      const anim = item.animations[0]; // Use the first animation for now
+      return join(basePath, 'eyes', item.variant, bodyTypeDir, `${anim}.png`);
+    }
+    
+    // For other equipment types
+    const anim = item.animations[0]; // Use the first animation for now
+    return join(basePath, item.type, item.variant, bodyTypeDir, `${anim}.png`);
   }
 }
 

@@ -1,6 +1,11 @@
 import express from 'express';
 import cors from 'cors';
 import CharacterGenerator from './sources/api.js';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -21,13 +26,24 @@ app.get('/health', (req, res) => {
 app.post('/api/generate', async (req, res) => {
   try {
     const config = req.body;
+    
+    // Validate required fields
+    if (!config.bodyType) {
+      return res.status(400).json({ error: 'bodyType is required' });
+    }
+    if (!config.animations || !Array.isArray(config.animations) || config.animations.length === 0) {
+      return res.status(400).json({ error: 'animations array is required' });
+    }
+    
+    // Generate the character
     const result = await generator.generateCharacter(config);
     res.json(result);
   } catch (error) {
     console.error('Error generating character:', error);
     res.status(500).json({ 
       error: 'Failed to generate character',
-      message: error.message 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });

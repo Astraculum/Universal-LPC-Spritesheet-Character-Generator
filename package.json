@@ -1,0 +1,13 @@
+{
+  "name": "universal-lpc-spritesheet-character-generator",
+  "version": "1.0.0",
+  "description": "Universal LPC Spritesheet Character Generator",
+  "main": "entry.js",
+  "scripts": {
+    "start": "node entry.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "puppeteer": "^21.5.0"
+  }
+} 

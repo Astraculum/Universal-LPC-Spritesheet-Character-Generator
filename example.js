@@ -13,12 +13,41 @@ async function main() {
   // Example items to draw
   const items = [
     {
-      fileName: 'body/bodies/male/idle/brown.png',
-      zPos: 0,
+      "id": "body-Body_color_light",
+      "parentName": "Body_color",
+      "value": null,
+      "matchBodyColor": "true",
+      "supportedAnimations": [
+        "shoot",
+        "hurt",
+      ],
+      "layer_1": {
+        "zPos": 10,
+        "male": "body/bodies/zombie/",
+        "female": "body/bodies/zombie/",
+        "teen": "body/bodies/zombie/"
+      },
+      "variant": "zombie"
     },
     {
-      fileName: 'head/heads/human/male/idle/brown.png',
-      zPos: 10,
+      "id": "dress_sleeves-Kimono_Sleeves_black",
+      "parentName": "Kimono_Sleeves",
+      "variant": "black",
+      "value": null,
+      "matchBodyColor": "false",
+      "supportedAnimations": [
+        "walk",
+      ],
+      "layer_1": {
+        "zPos": 31,
+        "female": "dress/kimono/sleeves/universal/female/",
+        "teen": "dress/kimono/sleeves/universal/female/"
+      },
+      "layer_2": {
+        "zPos": 145,
+        "female": "dress/kimono/sleeves/universal/female_front/",
+        "teen": "dress/kimono/sleeves/universal/female_front/"
+      }
     }
   ];
 

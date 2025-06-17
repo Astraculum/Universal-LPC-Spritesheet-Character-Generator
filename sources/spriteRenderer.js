@@ -1,5 +1,6 @@
 const { createCanvas, loadImage } = require('canvas');
 const path = require('path');
+const fs = require('fs');
 
 class SpriteRenderer {
   constructor(options = {}) {
@@ -61,12 +62,17 @@ class SpriteRenderer {
     }
     
     try {
+      // Check if file exists
+      if (!fs.existsSync(fullPath)) {
+        throw new Error(`Image file not found: ${fullPath}`);
+      }
+
       const image = await loadImage(fullPath);
       this.images.set(fullPath, image);
       return image;
     } catch (error) {
       console.error(`Failed to load image: ${fullPath}`, error);
-      return null;
+      throw error; // Re-throw the error to handle it in the calling function
     }
   }
 
@@ -75,103 +81,71 @@ class SpriteRenderer {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
     // Sort items by z-index
-    items.sort((a, b) => parseInt(a.zPos) - parseInt(b.zPos));
+    items.sort((a, b) => {
+      const aZPos = a.layer_1?.zPos || 0;
+      const bZPos = b.layer_1?.zPos || 0;
+      return aZPos - bZPos;
+    });
 
     // Draw each item
     for (const item of items) {
-      const { fileName, customAnimation } = item;
+      const { supportedAnimations, layer_1, variant } = item;
 
-      if (customAnimation) {
-        await this.drawCustomAnimation(item);
-      } else {
-        await this.drawStandardAnimations(item);
+      if (!supportedAnimations) {
+        throw new Error(`Missing supportedAnimations for item`);
+      }
+
+      if (!layer_1) {
+        throw new Error(`Missing layer_1 configuration for item`);
+      }
+
+      if (!variant) {
+        throw new Error(`Missing variant for item`);
+      }
+
+      // Get the appropriate path based on gender (defaulting to male if not specified)
+      const basePath = layer_1.male || layer_1.female || layer_1.teen;
+      if (!basePath) {
+        throw new Error(`No valid path found in layer_1 configuration`);
+      }
+
+      // Load and draw each animation
+      for (const [animName, yOffset] of Object.entries(this.baseAnimations)) {
+        if (supportedAnimations.includes(animName)) {
+          // Construct the full path: basePath + animation name + variant + .png
+          const animPath = `${basePath}/${animName}/${variant}.png`;
+
+          try {
+            const image = await this.loadImage(animPath);
+            if (image) {
+              this.ctx.drawImage(image, 0, yOffset);
+            }
+          } catch (error) {
+            console.warn(`Failed to draw animation ${animName} for ${basePath}/${animName}/${variant}:`, error);
+          }
+        }
       }
     }
 
     return this.canvas;
   }
 
-  async drawStandardAnimations(item) {
-    const { fileName } = item;
-    const [directory, file] = this.splitFilePath(fileName);
-
-    for (const [animName, yOffset] of Object.entries(this.baseAnimations)) {
-      let animationToCheck = animName;
-      if (animName === 'combat_idle') {
-        animationToCheck = 'combat';
-      } else if (animName === 'backslash') {
-        animationToCheck = '1h_slash';
-      } else if (animName === 'halfslash') {
-        animationToCheck = '1h_halfslash';
-      }
-    }
-  }
-
-  async drawCustomAnimation(item) {
-    const { fileName, customAnimation } = item;
-    const image = await this.loadImage(fileName);
-    if (!image) return;
-
-    const customAnimDef = this.customAnimations[customAnimation];
-    if (!customAnimDef) return;
-
-    const frameSize = customAnimDef.frameSize;
-    const width = frameSize * customAnimDef.frames[0].length;
-    const height = frameSize * customAnimDef.frames.length;
-
-    // Create temporary canvas for custom animation
-    const tempCanvas = createCanvas(width, height);
-    const tempCtx = tempCanvas.getContext('2d');
-
-    // Draw frames
-    for (let i = 0; i < customAnimDef.frames.length; i++) {
-      const frames = customAnimDef.frames[i];
-      for (let j = 0; j < frames.length; j++) {
-        const [rowName, x] = frames[j].split(',');
-        const y = this.animationRowsLayout[rowName] + 1;
-        const offset = (frameSize - this.frameSize) / 2;
-
-        // Get frame from main canvas
-        const frameData = this.ctx.getImageData(
-          this.frameSize * x,
-          this.frameSize * y,
-          this.frameSize,
-          this.frameSize
-        );
-
-        // Draw to temp canvas
-        tempCtx.putImageData(
-          frameData,
-          frameSize * j + offset,
-          frameSize * i + offset
-        );
-      }
-    }
-
-    // Draw custom animation to main canvas
-    this.ctx.drawImage(tempCanvas, 0, this.sheetHeight);
-  }
-
-  splitFilePath(filePath) {
-    const index = filePath.lastIndexOf('/');
-    if (index > -1) {
-      return [
-        filePath.substring(0, index),
-        filePath.substring(index + 1)
-      ];
-    }
-    throw new Error(`Could not split path: ${filePath}`);
-  }
-
-  // Helper method to save the canvas to a file
-  async saveToFile(path) {
-    const fs = require('fs');
-    const out = fs.createWriteStream(path);
-    const stream = this.canvas.createPNGStream();
-    stream.pipe(out);
+  async saveToFile(outputPath) {
     return new Promise((resolve, reject) => {
-      out.on('finish', resolve);
-      out.on('error', reject);
+      const out = fs.createWriteStream(outputPath);
+      const stream = this.canvas.createPNGStream();
+      
+      stream.pipe(out);
+      
+      out.on('finish', () => {
+        console.log(`Successfully saved sprite sheet to: ${outputPath}`);
+        resolve();
+      });
+      
+      out.on('error', (error) => {
+        console.error(`Error saving sprite sheet: ${error}`);
+        reject(error);
+      });
     });
   }
 }

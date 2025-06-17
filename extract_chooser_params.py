@@ -78,6 +78,9 @@ for input_tag in chooser_section.find_all("input", {"type": "radio"}):
                 param_data["supportedAnimations"] = animations
             else:
                 param_data["supportedAnimations"] = supported_animations
+            for key, value in sheet_definitions[name].items():
+                if key.startswith("layer_"):
+                    param_data[key] = value
         else:
             # 如果在sheet_definitions中找不到定义，默认支持所有animation
             param_data["supportedAnimations"] = supported_animations
